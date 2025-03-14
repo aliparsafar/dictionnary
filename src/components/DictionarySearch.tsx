@@ -1,19 +1,20 @@
-import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import axios from 'axios';
-import WordDefinition from './WordDefinition';
-import ImageDisplay from './ImageDisplay';
+import React, { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import axios from "axios";
+import WordDefinition from "./WordDefinition";
+import ImageDisplay from "./ImageDisplay";
 
-const API_URL = 'https://api.dictionaryapi.dev/api/v2/entries/en/';
-const UNSPLASH_URL = 'https://api.unsplash.com/search/photos';
-const UNSPLASH_ACCESS_KEY = import.meta.env.VITE_UNSPLASH_ACCESS_KEY; 
+const API_URL = "https://api.dictionaryapi.dev/api/v2/entries/en/";
+const UNSPLASH_URL = "https://api.unsplash.com/search/photos";
+const UNSPLASH_ACCESS_KEY = "M8SyDlmMWTWjtOz6YqIJk0yjl0Y12OPKwKDfUiZjqH8"; 
 
 const DictionarySearch: React.FC = () => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [query, setQuery] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [query, setQuery] = useState("");
 
+  
   const { data: wordData, isLoading: wordLoading, isError: wordError } = useQuery({
-    queryKey: query ? ['word', query] : [],
+    queryKey: query ? ["word", query] : [],
     queryFn: async () => {
       const response = await axios.get(`${API_URL}${query}`);
       return response.data[0];
@@ -21,20 +22,32 @@ const DictionarySearch: React.FC = () => {
     enabled: !!query,
   });
 
-  const { data: imageData, isError: imageError } = useQuery({
-    queryKey: query ? ['image', query] : [],
+
+  const { data: imageData, isLoading: imageLoading, isError: imageError } = useQuery({
+    queryKey: query ? ["image", query] : [],
     queryFn: async () => {
-      const response = await axios.get(`${UNSPLASH_URL}?query=${query}&client_id=${UNSPLASH_ACCESS_KEY}`);
-      console.log("Unsplash API Response:", response.data); 
-      return response.data.results.length > 0 
-        ? response.data.results[0].urls.small 
+      const response = await axios.get(UNSPLASH_URL, {
+        params: {
+          query: query,
+          client_id: UNSPLASH_ACCESS_KEY,
+          per_page: 1, 
+        },
+        headers: {
+          "Accept-Version": "v1",
+        },
+      });
+
+      console.log("Unsplash API Response:", response.data);
+
+      return response.data.results.length > 0
+        ? response.data.results[0].urls.small
         : "https://via.placeholder.com/150"; 
     },
     enabled: !!query,
   });
 
   const handleSearch = () => {
-    if (searchTerm.trim() !== '') {
+    if (searchTerm.trim() !== "") {
       setQuery(searchTerm);
     }
   };
@@ -61,6 +74,7 @@ const DictionarySearch: React.FC = () => {
       {wordError && <p className="text-red-500">Error fetching word data.</p>}
       {wordData && <WordDefinition wordData={wordData} />}
 
+      {imageLoading && <p className="text-gray-400 mt-4">Loading image...</p>}
       {imageError && <p className="text-red-500 mt-4">Error fetching image.</p>}
       {imageData && <ImageDisplay imageUrl={imageData} />}
     </div>
@@ -68,4 +82,5 @@ const DictionarySearch: React.FC = () => {
 };
 
 export default DictionarySearch;
+
 
